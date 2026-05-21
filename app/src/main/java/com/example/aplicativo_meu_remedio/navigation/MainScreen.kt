@@ -15,7 +15,9 @@ import com.example.aplicativo_meu_remedio.screens.HomeScreen
 import com.example.aplicativo_meu_remedio.screens.SettingsScreen
 
 @Composable
-fun MainScreen() {
+fun MainScreen(
+    onLogoutClick: () -> Unit
+) {
     var selectedItem by remember { mutableStateOf(0) }
 
     Scaffold(
@@ -37,7 +39,9 @@ fun MainScreen() {
                 0 -> HomeScreen()
                 1 -> AddMedicineScreen()
                 2 -> AgendaScreen()
-                3 -> SettingsScreen()
+                3 -> SettingsScreen(
+                    onLogoutClick = onLogoutClick
+                )
             }
         }
     }

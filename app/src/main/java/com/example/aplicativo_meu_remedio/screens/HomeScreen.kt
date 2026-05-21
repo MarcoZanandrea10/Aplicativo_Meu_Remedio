@@ -2,8 +2,10 @@ package com.example.aplicativo_meu_remedio.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Medication
 import androidx.compose.material.icons.filled.Schedule
@@ -15,9 +17,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aplicativo_meu_remedio.model.Medicine
+import com.example.aplicativo_meu_remedio.repository.AuthRepository
+import com.example.aplicativo_meu_remedio.repository.MedicineRepository
 import java.time.LocalDate
-import androidx.compose.foundation.verticalScroll
-import androidx.compose.foundation.rememberScrollState
 
 @Composable
 fun HomeScreen() {
@@ -27,11 +29,11 @@ fun HomeScreen() {
     var selectedDay by remember { mutableStateOf(days[todayIndex]) }
     var takenMedicines by remember { mutableStateOf(setOf<String>()) }
 
-    val medicines = listOf(
-        Medicine("Losartana", "50 mg", "08:00", 30),
-        Medicine("Omeprazol", "20 mg", "12:00", 14),
-        Medicine("Vitamina D", "1 cápsula", "18:00", 20)
-    )
+    val allMedicines = MedicineRepository.medicines
+
+    val medicines = allMedicines.filter {
+        it.days.isEmpty() || it.days.contains(selectedDay)
+    }
 
     Column(
         modifier = Modifier
@@ -41,7 +43,7 @@ fun HomeScreen() {
             .padding(20.dp)
     ) {
         Text(
-            text = "Olá, Marco!",
+            text = "Olá, ${AuthRepository.getUserName()}!",
             fontSize = 30.sp,
             color = MaterialTheme.colorScheme.primary
         )
@@ -81,6 +83,7 @@ fun HomeScreen() {
                 ) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(day, fontSize = 13.sp)
+
                         if (isToday) {
                             Text("Hoje", fontSize = 10.sp)
                         }
@@ -107,21 +110,35 @@ fun HomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        medicines.forEach { medicine ->
-            val isTaken = takenMedicines.contains(medicine.name)
-
-            MedicineHomeCard(
-                medicine = medicine,
-                isTaken = isTaken,
-                onTakeClick = {
-                    takenMedicines = if (isTaken) {
-                        takenMedicines - medicine.name
-                    } else {
-                        takenMedicines + medicine.name
-                    }
-                }
+        if (allMedicines.isEmpty()) {
+            EmptyMedicineCard(
+                title = "Nenhum remédio cadastrado ainda",
+                description = "Toque em Adicionar para cadastrar seu primeiro remédio."
             )
+        } else if (medicines.isEmpty()) {
+            EmptyMedicineCard(
+                title = "Nenhum remédio para este dia",
+                description = "Selecione outro dia ou cadastre um novo medicamento."
+            )
+        } else {
+            medicines.forEach { medicine ->
+                val isTaken = takenMedicines.contains(medicine.name)
+
+                MedicineHomeCard(
+                    medicine = medicine,
+                    isTaken = isTaken,
+                    onTakeClick = {
+                        takenMedicines = if (isTaken) {
+                            takenMedicines - medicine.name
+                        } else {
+                            takenMedicines + medicine.name
+                        }
+                    }
+                )
+            }
         }
+
+        Spacer(modifier = Modifier.height(90.dp))
     }
 }
 
@@ -203,6 +220,7 @@ fun MedicineHomeCard(
                         text = "Horário",
                         fontSize = 13.sp
                     )
+
                     Text(
                         text = medicine.time,
                         fontSize = 22.sp,
@@ -217,6 +235,7 @@ fun MedicineHomeCard(
                         text = "Restante",
                         fontSize = 13.sp
                     )
+
                     Text(
                         text = "${medicine.remaining}",
                         fontSize = 22.sp,
@@ -245,6 +264,48 @@ fun MedicineHomeCard(
                     fontSize = 18.sp
                 )
             }
+        }
+    }
+}
+
+@Composable
+fun EmptyMedicineCard(
+    title: String,
+    description: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(26.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                imageVector = Icons.Default.Medication,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(58.dp)
+            )
+
+            Spacer(modifier = Modifier.height(14.dp))
+
+            Text(
+                text = title,
+                fontSize = 22.sp,
+                color = MaterialTheme.colorScheme.primary
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = description,
+                fontSize = 16.sp
+            )
         }
     }
 }
